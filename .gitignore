@@ -1,0 +1,24 @@
+# ── Python / бэкенд ──
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# Локальный JSON-индекс (создаётся ingest в режиме без Postgres)
+backend/data/index.json
+
+# ── Node / фронтенд ──
+node_modules/
+dist/
+
+# ── IDE / ОС ──
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Локальные настройки Claude Code
+.claude/
