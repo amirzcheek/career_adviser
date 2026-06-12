@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
 import InterviewPage from "./pages/InterviewPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 import "./index.css";
 
 // Маршруты: App — общий layout (шапка + <Outlet/>).
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <ChatPage /> },
       { path: "interview", element: <InterviewPage /> },
+      { path: "admin", element: <AdminPage /> },
     ],
   },
 ]);

@@ -80,6 +80,33 @@ function handleEvent(rawEvent, { onSources, onDelta, onError }) {
   }
 }
 
+// Состояние сервиса и индекса (для админ-страницы).
+export async function getHealth() {
+  const res = await fetch(API_BASE + "/health", { cache: "no-store", headers: authHeaders() });
+  return res.json();
+}
+
+// Пересборка индекса базы знаний (только для админов). Токен идёт в заголовке
+// X-Admin-Token. На проде reverse-proxy портала может подставлять токен сам.
+export async function adminIngest(token) {
+  let res;
+  try {
+    res = await fetch(API_BASE + "/admin/ingest", {
+      method: "POST",
+      headers: { "X-Admin-Token": token || "", ...authHeaders() },
+    });
+  } catch (e) {
+    throw new Error("Сеть недоступна или backend не запущен. " + e.message);
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(typeof data.detail === "string" ? data.detail : `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return data; // { status, chunks, embedded, store, documents_dir }
+}
+
 // Режим тренировки собеседования (обычный JSON-ответ).
 export async function mockInterview({ profession, messages, language }) {
   let res;

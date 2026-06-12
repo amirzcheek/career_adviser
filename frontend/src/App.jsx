@@ -1,15 +1,29 @@
 import { createContext, useContext, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
-import { LANGUAGES, t } from "./i18n.js";
+import { t } from "./i18n.js";
+import { useAuth, PORTAL_URL, LOGOUT_URL } from "./auth.js";
 
 // Контекст языка интерфейса/ответов — общий для всех страниц.
 const LangContext = createContext({ language: "ru", setLanguage: () => {} });
 export const useLang = () => useContext(LangContext);
 
-// Общий каркас: шапка с языковым переключателем, навигацией и ссылкой на портал.
+// Контекст авторизации (личность + роль) — чтобы страницы знали об админ-правах.
+const AuthContext = createContext({ user: null, isAdmin: false });
+export const useAuthCtx = () => useContext(AuthContext);
+
+// Порядок и подписи языкового переключателя — как на портале (RU / KZ / EN).
+const LANG_PILL = [
+  { value: "ru", label: "RU" },
+  { value: "kk", label: "KZ" },
+  { value: "en", label: "EN" },
+];
+
+// Общий каркас: топбар портала (бренд, языки, пользователь, админка, выход),
+// заголовок агента с вкладками и область маршрута.
 export default function App() {
-  // Запоминаем выбранный язык между сессиями.
+  const auth = useAuth();
+
   const [language, setLanguageState] = useState(
     () => localStorage.getItem("knus_lang") || "ru"
   );
@@ -24,43 +38,66 @@ export default function App() {
 
   return (
     <LangContext.Provider value={{ language, setLanguage }}>
-      <div className="app">
-        <header className="app-header">
-          <div className="app-header__inner">
-            <span className="app-header__title">{t(language, "title")}</span>
+      <AuthContext.Provider value={auth}>
+        <div className="page">
+          {/* ── Топбар (стиль портала KNUS Digital) ── */}
+          <header className="topbar">
+            <div className="wrap topbar__inner">
+              <div className="topbar-left">
+                <a className="brand" href={PORTAL_URL}>
+                  KNUS Digital
+                </a>
+                <div className="lang-switch" aria-label="Язык / Тіл / Language">
+                  {LANG_PILL.map((l) => (
+                    <button
+                      key={l.value}
+                      type="button"
+                      className={`lang-btn${language === l.value ? " active" : ""}`}
+                      onClick={() => setLanguage(l.value)}
+                    >
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-            <nav className="app-nav">
-              <NavLink to="/" end className="app-nav__link">
-                {t(language, "navChat")}
-              </NavLink>
-              <NavLink to="/interview" className="app-nav__link">
-                {t(language, "navInterview")}
-              </NavLink>
-            </nav>
-
-            <div className="app-header__right">
-              <select
-                className="lang-select"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                aria-label="Язык / Тіл / Language"
-              >
-                {LANGUAGES.map((l) => (
-                  <option key={l.value} value={l.value}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
-              <a href="https://ai.knus.edu.kz/" className="app-header__portal">
-                {t(language, "portal")}
-              </a>
+              <div className="topbar-right">
+                {!auth.loading && auth.user?.displayName && (
+                  <span className="user-name">{auth.user.displayName}</span>
+                )}
+                {/* Ссылка «Админка» — только для админов */}
+                {auth.isAdmin && (
+                  <NavLink className="admin-link" to="/admin">
+                    {t(language, "admin")}
+                  </NavLink>
+                )}
+                <a className="logout-btn" href={LOGOUT_URL}>
+                  {t(language, "logout")}
+                </a>
+              </div>
             </div>
+          </header>
+
+          {/* ── Заголовок агента + вкладки ── */}
+          <div className="wrap">
+            <section className="agent-hero">
+              <h1>{t(language, "title")}</h1>
+              <nav className="tabs">
+                <NavLink to="/" end className="tab">
+                  {t(language, "navChat")}
+                </NavLink>
+                <NavLink to="/interview" className="tab">
+                  {t(language, "navInterview")}
+                </NavLink>
+              </nav>
+            </section>
+
+            <main className="app-main">
+              <Outlet />
+            </main>
           </div>
-        </header>
-        <main className="app-main">
-          <Outlet />
-        </main>
-      </div>
+        </div>
+      </AuthContext.Provider>
     </LangContext.Provider>
   );
 }
